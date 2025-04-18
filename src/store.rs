@@ -53,3 +53,6 @@ impl EventStore {
         Ok(events)
     }
 }
+
+unsafe impl Send for EventStore {}
+unsafe impl Sync for EventStore {}

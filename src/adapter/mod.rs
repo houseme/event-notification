@@ -8,7 +8,7 @@ pub mod mqtt;
 pub mod webhook;
 
 #[async_trait]
-pub trait ChannelAdapter: Send + Sync + 'static {
+pub trait ChannelAdapter: Send + Sync {
     fn name(&self) -> String;
     async fn send(&self, event: &Event) -> anyhow::Result<()>;
 }

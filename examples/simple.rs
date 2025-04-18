@@ -1,5 +1,4 @@
-use event_notification::adapter::{webhook::WebhookAdapter, ChannelAdapter};
-use event_notification::event::WebhookConfig;
+use event_notification::adapter::{webhook::{WebhookAdapter, WebhookConfig}, ChannelAdapter};
 use event_notification::NotificationSystem;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -9,7 +8,7 @@ use tokio::signal;
 async fn main() -> anyhow::Result<()> {
     tracing_subscriber::fmt::init();
 
-    let system = NotificationSystem::new("./events").await?;
+    let system = Arc::new(NotificationSystem::new("./events").await?);
 
     let webhook_config = WebhookConfig {
         endpoint: "http://localhost:8080/webhook".to_string(),
@@ -24,8 +23,8 @@ async fn main() -> anyhow::Result<()> {
     let webhook = WebhookAdapter::new(webhook_config);
 
     let adapters: Vec<Arc<dyn ChannelAdapter>> = vec![Arc::new(webhook)];
-
-    let system_handle = tokio::spawn(system.start(adapters));
+    let system_clone = Arc::clone(&system);
+    let system_handle = tokio::spawn((*system_clone).start(adapters));
 
     signal::ctrl_c().await?;
     tracing::info!("Received shutdown signal");

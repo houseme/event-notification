@@ -1,5 +1,5 @@
-use event_notification::adapter::{webhook::WebhookAdapter, ChannelAdapter};
-use event_notification::event::{Event, WebhookConfig};
+use event_notification::adapter::{webhook::WebhookAdapter, webhook::WebhookConfig, ChannelAdapter};
+use event_notification::event::Event;
 use serde_json::json;
 
 #[tokio::test]

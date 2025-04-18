@@ -1,10 +1,20 @@
 use crate::adapter::ChannelAdapter;
-use crate::event::{Event, WebhookConfig};
+use crate::event::Event;
 use async_trait::async_trait;
 use reqwest::{Client, RequestBuilder};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::time::Duration;
 use tokio::time::sleep;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WebhookConfig {
+    pub endpoint: String,
+    pub auth_token: Option<String>,
+    pub custom_headers: Option<HashMap<String, String>>,
+    pub max_retries: u32,
+    pub timeout: u64,
+}
 pub struct WebhookAdapter {
     config: WebhookConfig,
     client: Client,

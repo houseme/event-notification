@@ -23,7 +23,7 @@ tokio-util = "0.7"
 async-trait = "0.1"
 
 [dependencies.rdkafka]
-version = "0.36"
+version = "0.37"
 features = ["tokio"]
 optional = true
 

@@ -1,26 +1,26 @@
-use crate::adapter::ChannelAdapter;
+use crate::config::MqttConfig;
 use crate::event::Event;
+use crate::Error;
 use async_trait::async_trait;
 use rumqttc::{AsyncClient, MqttOptions, QoS};
+use std::time::Duration;
+use tokio::time::sleep;
 
 pub struct MqttAdapter {
     client: AsyncClient,
     topic: String,
+    max_retries: u32,
 }
 
 impl MqttAdapter {
-    pub fn new(
-        broker: &str,
-        port: u16,
-        client_id: &str,
-        topic: &str,
-    ) -> (Self, rumqttc::EventLoop) {
-        let mqtt_options = MqttOptions::new(client_id, broker, port);
+    pub fn new(config: &MqttConfig) -> (Self, rumqttc::EventLoop) {
+        let mqtt_options = MqttOptions::new(&config.client_id, &config.broker, config.port);
         let (client, event_loop) = rumqttc::AsyncClient::new(mqtt_options, 10);
         (
             Self {
                 client,
-                topic: topic.to_string(),
+                topic: config.topic.clone(),
+                max_retries: config.max_retries,
             },
             event_loop,
         )
@@ -33,11 +33,23 @@ impl ChannelAdapter for MqttAdapter {
         "mqtt".to_string()
     }
 
-    async fn send(&self, event: &Event) -> anyhow::Result<()> {
-        let payload = serde_json::to_string(event)?;
-        self.client
-            .publish(&self.topic, QoS::AtLeastOnce, false, payload)
-            .await?;
-        Ok(())
+    async fn send(&self, event: &Event) -> Result<(), Error> {
+        let payload = serde_json::to_string(event).map_err(Error::Serde)?;
+        let mut attempt = 0;
+        loop {
+            match self
+                .client
+                .publish(&self.topic, QoS::AtLeastOnce, false, payload.clone())
+                .await
+            {
+                Ok(()) => return Ok(()),
+                Err(e) if attempt < self.max_retries => {
+                    attempt += 1;
+                    tracing::warn!("MQTT attempt {} failed: {}. Retrying...", attempt, e);
+                    sleep(Duration::from_secs(2u64.pow(attempt))).await;
+                }
+                Err(e) => return Err(Error::Mqtt(e)),
+            }
+        }
     }
 }

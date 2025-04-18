@@ -1,24 +1,31 @@
-use crate::adapter::ChannelAdapter;
+use crate::config::KafkaConfig;
 use crate::event::Event;
+use crate::Error;
 use async_trait::async_trait;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::util::Timeout;
+use std::time::Duration;
+use tokio::time::sleep;
 
 pub struct KafkaAdapter {
     producer: FutureProducer,
     topic: String,
+    max_retries: u32,
 }
 
 impl KafkaAdapter {
-    pub fn new(brokers: &str, topic: &str) -> anyhow::Result<Self> {
+    pub fn new(config: &KafkaConfig) -> Result<Self, Error> {
         let producer = rdkafka::producer::FutureProducer::from_config(
             &rdkafka::config::ClientConfig::new()
-                .set("bootstrap.servers", brokers)
-                .create()?,
-        )?;
+                .set("bootstrap.servers", &config.brokers)
+                .create()
+                .map_err(Error::Kafka)?,
+        )
+        .map_err(Error::Kafka)?;
         Ok(Self {
             producer,
-            topic: topic.to_string(),
+            topic: config.topic.clone(),
+            max_retries: config.max_retries,
         })
     }
 }
@@ -29,15 +36,22 @@ impl ChannelAdapter for KafkaAdapter {
         "kafka".to_string()
     }
 
-    async fn send(&self, event: &Event) -> anyhow::Result<()> {
-        let payload = serde_json::to_string(event)?;
+    async fn send(&self, event: &Event) -> Result<(), Error> {
+        let payload = serde_json::to_string(event).map_err(Error::Serde)?;
         let record = FutureRecord::to(&self.topic)
             .payload(&payload)
             .key(&event.id.to_string());
-        self.producer
-            .send(record, Timeout::Never)
-            .await
-            .map_err(|(e, _)| anyhow::anyhow!(e))?;
-        Ok(())
+        let mut attempt = 0;
+        loop {
+            match self.producer.send(record, Timeout::Never).await {
+                Ok(()) => return Ok(()),
+                Err((e, _)) if attempt < self.max_retries => {
+                    attempt += 1;
+                    tracing::warn!("Kafka attempt {} failed: {}. Retrying...", attempt, e);
+                    sleep(Duration::from_secs(2u64.pow(attempt))).await;
+                }
+                Err((e, _)) => return Err(Error::Kafka(e)),
+            }
+        }
     }
 }

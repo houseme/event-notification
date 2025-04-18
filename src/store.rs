@@ -1,4 +1,5 @@
-use crate::event::Event;
+use crate::error::Error;
+use crate::event::Log;
 use chrono::Utc;
 use parking_lot::RwLock;
 use std::sync::Arc;
@@ -11,7 +12,7 @@ pub struct EventStore {
 }
 
 impl EventStore {
-    pub async fn new(path: &str) -> anyhow::Result<Self> {
+    pub async fn new(path: &str) -> Result<Self, Error> {
         create_dir_all(path).await?;
         Ok(Self {
             path: path.to_string(),
@@ -19,7 +20,7 @@ impl EventStore {
         })
     }
 
-    pub async fn save_events(&self, events: &[Event]) -> anyhow::Result<()> {
+    pub async fn save_logs(&self, logs: &[Log]) -> Result<(), Error> {
         let _guard = self.lock.write();
         let file_path = format!("{}/events_{}.jsonl", self.path, Utc::now().timestamp());
         let file = OpenOptions::new()
@@ -28,8 +29,8 @@ impl EventStore {
             .open(&file_path)
             .await?;
         let mut writer = BufWriter::new(file);
-        for event in events {
-            let line = serde_json::to_string(event)?;
+        for log in logs {
+            let line = serde_json::to_string(log)?;
             writer.write_all(line.as_bytes()).await?;
             writer.write_all(b"\n").await?;
         }
@@ -37,22 +38,19 @@ impl EventStore {
         Ok(())
     }
 
-    pub async fn load_events(&self) -> anyhow::Result<Vec<Event>> {
+    pub async fn load_logs(&self) -> Result<Vec<Log>, Error> {
         let _guard = self.lock.read();
-        let mut events = Vec::new();
+        let mut logs = Vec::new();
         let mut entries = tokio::fs::read_dir(&self.path).await?;
         while let Some(entry) = entries.next_entry().await? {
             let file = File::open(entry.path()).await?;
             let reader = BufReader::new(file);
             let mut lines = reader.lines();
             while let Some(line) = lines.next_line().await? {
-                let event: Event = serde_json::from_str(&line)?;
-                events.push(event);
+                let log: Log = serde_json::from_str(&line)?;
+                logs.push(log);
             }
         }
-        Ok(events)
+        Ok(logs)
     }
 }
-
-unsafe impl Send for EventStore {}
-unsafe impl Sync for EventStore {}

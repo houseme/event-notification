@@ -1,20 +1,12 @@
 use crate::adapter::ChannelAdapter;
+use crate::config::WebhookConfig;
+use crate::error::Error;
 use crate::event::Event;
 use async_trait::async_trait;
 use reqwest::{Client, RequestBuilder};
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::time::Duration;
 use tokio::time::sleep;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct WebhookConfig {
-    pub endpoint: String,
-    pub auth_token: Option<String>,
-    pub custom_headers: Option<HashMap<String, String>>,
-    pub max_retries: u32,
-    pub timeout: u64,
-}
 pub struct WebhookAdapter {
     config: WebhookConfig,
     client: Client,
@@ -49,12 +41,12 @@ impl ChannelAdapter for WebhookAdapter {
         "webhook".to_string()
     }
 
-    async fn send(&self, event: &Event) -> anyhow::Result<()> {
+    async fn send(&self, event: &Event) -> Result<(), Error> {
         let mut attempt = 0;
         loop {
             match self.build_request(event).send().await {
                 Ok(response) => {
-                    response.error_for_status()?;
+                    response.error_for_status().map_err(Error::Http)?;
                     return Ok(());
                 }
                 Err(e) if attempt < self.config.max_retries => {
@@ -62,13 +54,7 @@ impl ChannelAdapter for WebhookAdapter {
                     tracing::warn!("Webhook attempt {} failed: {}. Retrying...", attempt, e);
                     sleep(Duration::from_secs(2u64.pow(attempt))).await;
                 }
-                Err(e) => {
-                    return Err(anyhow::anyhow!(
-                        "Webhook failed after {} retries: {}",
-                        attempt,
-                        e
-                    ));
-                }
+                Err(e) => return Err(Error::Http(e)),
             }
         }
     }

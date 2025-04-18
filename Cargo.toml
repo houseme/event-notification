@@ -1,10 +1,10 @@
 [package]
-name = "event_notification"
+name = "event-notification"
 version = "0.1.0"
 edition = "2024"
 description = "A modular event notification system with multi-channel support"
-license = "MIT"
-repository = "https://github.com/houseme/event_notification"
+license = "Apache-2.0 or MIT"
+repository = "https://github.com/houseme/event-notification"
 
 [dependencies]
 tokio = { version = "1.40", features = ["full"] }

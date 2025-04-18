@@ -13,7 +13,7 @@ serde_json = "1.0"
 uuid = { version = "1.10", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 reqwest = { version = "0.12", features = ["json"] }
-axum = "0.7"
+axum = "0.8"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 thiserror = "1.0"

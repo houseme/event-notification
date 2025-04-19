@@ -1,11 +1,12 @@
-use crate::config::MqttConfig;
-use crate::event::Event;
 use crate::Error;
+use crate::Event;
+use crate::MqttConfig;
 use async_trait::async_trait;
 use rumqttc::{AsyncClient, MqttOptions, QoS};
 use std::time::Duration;
 use tokio::time::sleep;
 
+/// MQTT adapter for sending events to an MQTT broker.
 pub struct MqttAdapter {
     client: AsyncClient,
     topic: String,
@@ -13,6 +14,7 @@ pub struct MqttAdapter {
 }
 
 impl MqttAdapter {
+    /// Creates a new MQTT adapter.
     pub fn new(config: &MqttConfig) -> (Self, rumqttc::EventLoop) {
         let mqtt_options = MqttOptions::new(&config.client_id, &config.broker, config.port);
         let (client, event_loop) = rumqttc::AsyncClient::new(mqtt_options, 10);

@@ -1,6 +1,9 @@
+use crate::Error;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::{DeserializeFromStr, SerializeDisplay};
+use smallvec::{SmallVec, smallvec};
+use std::borrow::Cow;
 use std::collections::HashMap;
 use strum::{Display, EnumString};
 use uuid::Uuid;
@@ -61,6 +64,182 @@ pub struct Source {
     pub user_agent: String,
 }
 
+/// Builder for creating an Event.
+///
+/// This struct is used to build an Event object with various parameters.
+/// It provides methods to set each parameter and a build method to create the Event.
+#[derive(Default, Clone)]
+pub struct EventBuilder {
+    event_version: Option<String>,
+    event_source: Option<String>,
+    aws_region: Option<String>,
+    event_time: Option<String>,
+    event_name: Option<Name>,
+    user_identity: Option<Identity>,
+    request_parameters: Option<HashMap<String, String>>,
+    response_elements: Option<HashMap<String, String>>,
+    s3: Option<Metadata>,
+    source: Option<Source>,
+    channels: Option<SmallVec<[String; 2]>>,
+}
+
+impl EventBuilder {
+    /// create a builder that pre filled default values
+    pub fn new() -> Self {
+        Self {
+            event_version: Some(Cow::Borrowed("2.0").to_string()),
+            event_source: Some(Cow::Borrowed("aws:s3").to_string()),
+            aws_region: Some("us-east-1".to_string()),
+            event_time: Some(Utc::now().to_rfc3339()),
+            event_name: None,
+            user_identity: Some(Identity {
+                principal_id: "anonymous".to_string(),
+            }),
+            request_parameters: Some(HashMap::new()),
+            response_elements: Some(HashMap::new()),
+            s3: None,
+            source: None,
+            channels: Some(Vec::new().into()),
+        }
+    }
+
+    /// verify and set the event version
+    pub fn event_version(mut self, event_version: impl Into<String>) -> Self {
+        let event_version = event_version.into();
+        if !event_version.is_empty() {
+            self.event_version = Some(event_version);
+        }
+        self
+    }
+
+    /// verify and set the event source
+    pub fn event_source(mut self, event_source: impl Into<String>) -> Self {
+        let event_source = event_source.into();
+        if !event_source.is_empty() {
+            self.event_source = Some(event_source);
+        }
+        self
+    }
+
+    /// set up aws regions
+    pub fn aws_region(mut self, aws_region: impl Into<String>) -> Self {
+        self.aws_region = Some(aws_region.into());
+        self
+    }
+
+    /// set event time
+    pub fn event_time(mut self, event_time: impl Into<String>) -> Self {
+        self.event_time = Some(event_time.into());
+        self
+    }
+
+    /// set event name
+    pub fn event_name(mut self, event_name: Name) -> Self {
+        self.event_name = Some(event_name);
+        self
+    }
+
+    /// set user identity
+    pub fn user_identity(mut self, user_identity: Identity) -> Self {
+        self.user_identity = Some(user_identity);
+        self
+    }
+
+    /// set request parameters
+    pub fn request_parameters(mut self, request_parameters: HashMap<String, String>) -> Self {
+        self.request_parameters = Some(request_parameters);
+        self
+    }
+
+    /// set response elements
+    pub fn response_elements(mut self, response_elements: HashMap<String, String>) -> Self {
+        self.response_elements = Some(response_elements);
+        self
+    }
+
+    /// setting up s3 metadata
+    pub fn s3(mut self, s3: Metadata) -> Self {
+        self.s3 = Some(s3);
+        self
+    }
+
+    /// set event source information
+    pub fn source(mut self, source: Source) -> Self {
+        self.source = Some(source);
+        self
+    }
+
+    /// set up the sending channel
+    pub fn channels(mut self, channels: Vec<String>) -> Self {
+        self.channels = Some(channels.into());
+        self
+    }
+
+    /// Create a preconfigured builder for common object event scenarios
+    pub fn for_object_creation(s3: Metadata, source: Source) -> Self {
+        Self::new()
+            .event_name(Name::ObjectCreatedPut)
+            .s3(s3)
+            .source(source)
+    }
+
+    /// Create a preconfigured builder for object deletion events
+    pub fn for_object_removal(s3: Metadata, source: Source) -> Self {
+        Self::new()
+            .event_name(Name::ObjectRemovedDelete)
+            .s3(s3)
+            .source(source)
+    }
+
+    /// build event instance
+    ///
+    /// Verify the required fields and create a complete Event object
+    pub fn build(self) -> Result<Event, Error> {
+        let event_version = self
+            .event_version
+            .ok_or(Error::MissingField("event_version"))?;
+
+        let event_source = self
+            .event_source
+            .ok_or(Error::MissingField("event_source"))?;
+
+        let aws_region = self.aws_region.ok_or(Error::MissingField("aws_region"))?;
+
+        let event_time = self.event_time.ok_or(Error::MissingField("event_time"))?;
+
+        let event_name = self.event_name.ok_or(Error::MissingField("event_name"))?;
+
+        let user_identity = self
+            .user_identity
+            .ok_or(Error::MissingField("user_identity"))?;
+
+        let request_parameters = self.request_parameters.unwrap_or_default();
+        let response_elements = self.response_elements.unwrap_or_default();
+
+        let s3 = self.s3.ok_or(Error::MissingField("s3"))?;
+
+        let source = self.source.ok_or(Error::MissingField("source"))?;
+
+        let channels = self.channels.unwrap_or_else(|| smallvec![]);
+
+        Ok(Event {
+            event_version,
+            event_source,
+            aws_region,
+            event_time,
+            event_name,
+            user_identity,
+            request_parameters,
+            response_elements,
+            s3,
+            source,
+            id: Uuid::new_v4(),
+            timestamp: Utc::now(),
+            channels,
+        })
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Event {
     #[serde(rename = "eventVersion")]
@@ -83,38 +262,49 @@ pub struct Event {
     pub source: Source,
     pub id: Uuid,
     pub timestamp: DateTime<Utc>,
-    pub channels: Vec<String>,
+    pub channels: SmallVec<[String; 2]>,
 }
 
 impl Event {
-    pub fn new(
-        event_version: &str,
-        event_source: &str,
-        aws_region: &str,
-        event_time: &str,
-        event_name: Name,
-        user_identity: Identity,
-        request_parameters: HashMap<String, String>,
-        response_elements: HashMap<String, String>,
-        s3: Metadata,
-        source: Source,
-        channels: Vec<String>,
-    ) -> Self {
-        Self {
-            event_version: event_version.to_string(),
-            event_source: event_source.to_string(),
-            aws_region: aws_region.to_string(),
-            event_time: event_time.to_string(),
-            event_name,
-            user_identity,
-            request_parameters,
-            response_elements,
-            s3,
-            source,
-            id: Uuid::new_v4(),
-            timestamp: Utc::now(),
-            channels,
-        }
+    /// create a new event builder
+    ///
+    /// Returns an EventBuilder instance pre-filled with default values
+    pub fn builder() -> EventBuilder {
+        EventBuilder::new()
+    }
+
+    /// Quickly create Event instances with necessary fields
+    ///
+    /// suitable for common s3 event scenarios
+    pub fn create(event_name: Name, s3: Metadata, source: Source, channels: Vec<String>) -> Self {
+        Self::builder()
+            .event_name(event_name)
+            .s3(s3)
+            .source(source)
+            .channels(channels)
+            .build()
+            .expect("Failed to create event, missing necessary parameters")
+    }
+
+    /// a convenient way to create a preconfigured builder
+    pub fn for_object_creation(s3: Metadata, source: Source) -> EventBuilder {
+        EventBuilder::for_object_creation(s3, source)
+    }
+
+    /// a convenient way to create a preconfigured builder
+    pub fn for_object_removal(s3: Metadata, source: Source) -> EventBuilder {
+        EventBuilder::for_object_removal(s3, source)
+    }
+
+    /// Determine whether an event belongs to a specific type
+    pub fn is_type(&self, event_type: Name) -> bool {
+        let mask = event_type.mask();
+        (self.event_name.mask() & mask) != 0
+    }
+
+    /// Determine whether an event needs to be sent to a specific channel
+    pub fn is_for_channel(&self, channel: &str) -> bool {
+        self.channels.iter().any(|c| c == channel)
     }
 }
 

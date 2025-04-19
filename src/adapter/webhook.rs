@@ -1,18 +1,20 @@
-use crate::adapter::ChannelAdapter;
-use crate::config::WebhookConfig;
-use crate::error::Error;
-use crate::event::Event;
+use crate::ChannelAdapter;
+use crate::Error;
+use crate::Event;
+use crate::WebhookConfig;
 use async_trait::async_trait;
 use reqwest::{Client, RequestBuilder};
 use std::time::Duration;
 use tokio::time::sleep;
 
+/// Webhook adapter for sending events to a webhook endpoint.
 pub struct WebhookAdapter {
     config: WebhookConfig,
     client: Client,
 }
 
 impl WebhookAdapter {
+    /// Creates a new Webhook adapter.
     pub fn new(config: WebhookConfig) -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(config.timeout))
@@ -20,7 +22,7 @@ impl WebhookAdapter {
             .expect("Failed to build reqwest client");
         Self { config, client }
     }
-
+    /// Builds the request to send the event.
     fn build_request(&self, event: &Event) -> RequestBuilder {
         let mut request = self.client.post(&self.config.endpoint).json(event);
         if let Some(token) = &self.config.auth_token {

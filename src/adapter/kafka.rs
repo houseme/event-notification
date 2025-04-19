@@ -1,12 +1,13 @@
+use crate::Error;
 use crate::config::KafkaConfig;
 use crate::event::Event;
-use crate::Error;
 use async_trait::async_trait;
 use rdkafka::producer::{FutureProducer, FutureRecord};
 use rdkafka::util::Timeout;
 use std::time::Duration;
 use tokio::time::sleep;
 
+/// Kafka adapter for sending events to a Kafka topic.
 pub struct KafkaAdapter {
     producer: FutureProducer,
     topic: String,
@@ -14,6 +15,7 @@ pub struct KafkaAdapter {
 }
 
 impl KafkaAdapter {
+    /// Creates a new Kafka adapter.
     pub fn new(config: &KafkaConfig) -> Result<Self, Error> {
         let producer = rdkafka::producer::FutureProducer::from_config(
             &rdkafka::config::ClientConfig::new()

@@ -1,10 +1,10 @@
-# Event Notification
+# 事件通知系统
 
 <div align="center">
 
 [English](./README.md) | [简体中文](./README-zh.md)
 
-A modular event notification system with multi-channel support for Rust applications.
+一个支持多通道的模块化事件通知系统，专为 Rust 应用设计。
 
 [![Crates.io](https://img.shields.io/crates/v/event-notification.svg)](https://crates.io/crates/event-notification)
 [![Docs.rs](https://docs.rs/event-notification/badge.svg)](https://docs.rs/event-notification)
@@ -13,32 +13,32 @@ A modular event notification system with multi-channel support for Rust applicat
 
 </div>
 
-## Features
+## 特性
 
-- Modular notification system with pluggable channel adapters
-- Supports multiple delivery channels (Webhook, Kafka, MQTT)
-- Asynchronous event processing with Tokio
-- Simple global initialization pattern for cross-crate usage
-- Event persistence and history management
-- Flexible configuration options
+- 模块化通知系统，支持可插拔式通道适配器
+- 支持多种传输通道（Webhook、Kafka、MQTT）
+- 基于 Tokio 的异步事件处理
+- 简单的全局初始化模式，便于跨 crate 使用
+- 事件持久化和历史记录管理
+- 灵活的配置选项
 
-## Installation
+## 安装
 
-Add this to your `Cargo.toml`:
+在 `Cargo.toml` 中添加：
 
 ```toml
 [dependencies]
 event-notification = "0.1.0"
 ```
 
-Enable specific adapters with features:
+启用特定适配器功能：
 
 ```toml
 [dependencies]
 event-notification = { version = "0.1.0", features = ["webhook", "kafka", "mqtt"] }
 ```
 
-## Quick Start
+## 快速开始
 
 ```rust
 use event_notification::{initialize, send_event, start, Event, Identity, Name, NotificationConfig};
@@ -46,23 +46,23 @@ use std::error::Error;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    // 1. Configure the notification system
+    // 1. 配置通知系统
     let config = NotificationConfig {
         store_path: "./events".to_string(),
         channel_capacity: 100,
         adapters: vec![
-            // Configure your adapters here
+            // 在此配置适配器
         ],
     };
 
-    // 2. Initialize the global notification system
+    // 2. 初始化全局通知系统
     initialize(config.clone()).await?;
 
-    // 3. Start the system with adapters
+    // 3. 启动系统和适配器
     let adapters = event_notification::create_adapters(&config.adapters)?;
     start(adapters).await?;
 
-    // 4. Send events from anywhere in your application
+    // 4. 在应用程序的任何位置发送事件
     let event = Event::builder()
         .event_time("2023-10-01T12:00:00.000Z")
         .event_name(Name::ObjectCreatedPut)
@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     send_event(event).await?;
 
-    // 5. Shutdown gracefully when done
+    // 5. 优雅关闭
     tokio::signal::ctrl_c().await?;
     event_notification::shutdown()?;
 
@@ -81,11 +81,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 }
 ```
 
-## Supported Adapters
+## 支持的适配器
 
 ### Webhook
 
-Send events to HTTP endpoints:
+发送事件到 HTTP 端点：
 
 ```rust
 use event_notification::{AdapterConfig, WebhookConfig};
@@ -104,7 +104,7 @@ let adapter_config = AdapterConfig::Webhook(webhook_config);
 
 ### Kafka
 
-Publish events to Kafka topics:
+发布事件到 Kafka 主题：
 
 ```rust
 use event_notification::{AdapterConfig, KafkaConfig};
@@ -120,7 +120,7 @@ let adapter_config = AdapterConfig::Kafka(kafka_config);
 
 ### MQTT
 
-Publish events to MQTT topics:
+发布事件到 MQTT 主题：
 
 ```rust
 use event_notification::{AdapterConfig, MqttConfig};
@@ -135,26 +135,26 @@ qos: 1,
 let adapter_config = AdapterConfig::Mqtt(mqtt_config);
 ```
 
-## Using Across Multiple Crates
+## 跨多个 Crate 使用
 
-Initialize once in your main application:
+在主应用程序中初始化一次：
 
 ```rust
-// main.rs or lib.rs
+// main.rs 或 lib.rs
 event_notification::initialize(config).await?;
 let adapters = event_notification::create_adapters( & config.adapters) ?;
 event_notification::start(adapters).await?;
 ```
 
-Then use from any other crate:
+然后从任何其他 crate 中使用：
 
 ```rust
-// any other module or crate
+// 任何其他模块或 crate
 use event_notification::{send_event, Event};
 
 pub async fn process() -> Result<(), Box<dyn std::error::Error>> {
     let event = Event::builder()
-        // Configure event
+        // 配置事件
         .build()?;
 
     send_event(event).await?;
@@ -162,9 +162,8 @@ pub async fn process() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## License
+## 许可证
 
-Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT) at your option.
+本项目基于 [Apache License, Version 2.0](LICENSE-APACHE) 或 [MIT license](LICENSE-MIT) 授权，可任选其一。
 
-Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in this crate by you, as
-defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
+除非您另有明确声明，否则您对本项目提交的任何贡献（按 Apache-2.0 许可证定义）均应按上述方式进行双重许可，不附加任何其他条款或条件。

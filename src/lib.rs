@@ -1,20 +1,43 @@
-pub mod adapter;
-pub mod bus;
-pub mod config;
-pub mod error;
-pub mod event;
-pub mod producer;
-pub mod store;
+mod adapter;
+mod bus;
+mod config;
+mod error;
+mod event;
+mod global;
+mod producer;
+mod store;
 
-use adapter::ChannelAdapter;
-use config::NotificationConfig;
-use error::Error;
-use event::Event;
+pub use adapter::create_adapters;
+#[cfg(feature = "kafka")]
+pub use adapter::kafka::KafkaAdapter;
+#[cfg(feature = "mqtt")]
+pub use adapter::mqtt::MqttAdapter;
+#[cfg(feature = "webhook")]
+pub use adapter::webhook::WebhookAdapter;
+pub use adapter::ChannelAdapter;
+pub use bus::event_bus;
+#[cfg(feature = "kafka")]
+pub use config::KafkaConfig;
+#[cfg(feature = "mqtt")]
+pub use config::MqttConfig;
+#[cfg(feature = "webhook")]
+pub use config::WebhookConfig;
+pub use config::{AdapterConfig, NotificationConfig};
+pub use error::Error;
+
+pub use event::{Bucket, Event, EventBuilder, Identity, Log, Metadata, Name, Object, Source};
+pub use global::{initialize, initialize_and_start, send_event, shutdown, start};
+pub use producer::{handle_event, start_producer};
+pub use store::EventStore;
+
 use std::sync::Arc;
-use store::EventStore;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
+/// The `NotificationSystem` struct represents the notification system.
+/// It manages the event bus and the adapters.
+/// It is responsible for sending and receiving events.
+/// It also handles the shutdown process.
 pub struct NotificationSystem {
     tx: mpsc::Sender<Event>,
     rx: Option<mpsc::Receiver<Event>>,
@@ -23,6 +46,7 @@ pub struct NotificationSystem {
 }
 
 impl NotificationSystem {
+    /// Creates a new `NotificationSystem` instance.
     pub async fn new(config: NotificationConfig) -> Result<Self, Error> {
         let (tx, rx) = mpsc::channel::<Event>(config.channel_capacity);
         let store = Arc::new(EventStore::new(&config.store_path).await?);
@@ -31,7 +55,10 @@ impl NotificationSystem {
         let restored_logs = store.load_logs().await?;
         for log in restored_logs {
             for event in log.records {
-                tx.send(event).await?;
+                // For example, where the send method may return a SendError when calling it
+                tx.send(event)
+                    .await
+                    .map_err(|e| Error::ChannelSend(Box::new(e)))?;
             }
         }
 
@@ -43,6 +70,8 @@ impl NotificationSystem {
         })
     }
 
+    /// Starts the notification system.
+    /// It initializes the event bus and the producer.
     pub async fn start(&mut self, adapters: Vec<Arc<dyn ChannelAdapter>>) -> Result<(), Error> {
         let rx = self.rx.take().ok_or_else(|| Error::EventBusStarted)?;
 
@@ -54,8 +83,9 @@ impl NotificationSystem {
             }
         });
 
-        let producer_handle = tokio::spawn(async {
-            if let Err(e) = producer::start_producer(self.tx.clone()).await {
+        let tx_clone = self.tx.clone();
+        let producer_handle = tokio::spawn(async move {
+            if let Err(e) = producer::start_producer(tx_clone).await {
                 tracing::error!("Producer failed: {}", e);
             }
         });
@@ -65,7 +95,7 @@ impl NotificationSystem {
                 Ok(())
             },
             result = producer_handle => {
-               result.map_err(Error::JoinError)?;
+                result.map_err(Error::JoinError)?;
                 Ok(())
             },
             _ = self.shutdown.cancelled() => {
@@ -75,11 +105,18 @@ impl NotificationSystem {
         }
     }
 
+    /// Sends an event to the notification system.
+    /// This method is used to send events to the event bus.
     pub async fn send_event(&self, event: Event) -> Result<(), Error> {
-        self.tx.send(event).await?;
+        self.tx
+            .send(event)
+            .await
+            .map_err(|e| Error::ChannelSend(Box::new(e)))?;
         Ok(())
     }
 
+    /// Shuts down the notification system.
+    /// This method is used to cancel the event bus and producer tasks.
     pub fn shutdown(&self) {
         self.shutdown.cancel();
     }

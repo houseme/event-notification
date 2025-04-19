@@ -1,6 +1,9 @@
 use thiserror::Error;
+use tokio::sync::mpsc::error;
 use tokio::task::JoinError;
 
+/// The `Error` enum represents all possible errors that can occur in the application.
+/// It implements the `std::error::Error` trait and provides a way to convert various error types into a single error type.
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Join error: {0}")]
@@ -18,9 +21,25 @@ pub enum Error {
     #[error("MQTT error: {0}")]
     Mqtt(#[from] rumqttc::ClientError),
     #[error("Channel send error: {0}")]
-    ChannelSend(#[from] tokio::sync::mpsc::error::SendError<crate::event::Event>),
+    ChannelSend(#[from] Box<error::SendError<crate::event::Event>>),
     #[error("Feature disabled: {0}")]
     FeatureDisabled(&'static str),
     #[error("Event bus already started")]
     EventBusStarted,
+    #[error("necessary fields are missing:{0}")]
+    MissingField(&'static str),
+    #[error("field verification failed:{0}")]
+    ValidationError(&'static str),
+    #[error("{0}")]
+    Custom(String),
+    #[error("Configuration error: {0}")]
+    ConfigError(String),
+    #[error("Configuration loading error: {0}")]
+    Figment(#[from] figment::Error),
+}
+
+impl Error {
+    pub(crate) fn custom(msg: &str) -> Error {
+        Self::Custom(msg.to_string())
+    }
 }

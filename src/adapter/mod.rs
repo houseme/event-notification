@@ -1,30 +1,38 @@
-use crate::config::AdapterConfig;
-use crate::event::Event;
+use crate::AdapterConfig;
+use crate::Error;
+use crate::Event;
 use async_trait::async_trait;
 use std::sync::Arc;
 
 #[cfg(feature = "kafka")]
-pub mod kafka;
+pub(crate) mod kafka;
 #[cfg(feature = "mqtt")]
-pub mod mqtt;
+pub(crate) mod mqtt;
 #[cfg(feature = "webhook")]
-pub mod webhook;
+pub(crate) mod webhook;
 
-use crate::error::Error;
-
+/// The `ChannelAdapter` trait defines the interface for all channel adapters.
 #[async_trait]
-pub trait ChannelAdapter: Send + Sync {
+pub trait ChannelAdapter: Send + Sync + 'static {
+    /// Sends an event to the channel.
     fn name(&self) -> String;
+    /// Sends an event to the channel.
     async fn send(&self, event: &Event) -> Result<(), Error>;
 }
 
-pub fn create_adapters(configs: &[AdapterConfig]) -> Result<Vec<Arc<dyn ChannelAdapter>>, Error> {
+/// Creates channel adapters based on the provided configuration.
+pub fn create_adapters(
+    configs: &[AdapterConfig],
+) -> Result<Vec<Arc<dyn ChannelAdapter>>, Box<Error>> {
     let mut adapters: Vec<Arc<dyn ChannelAdapter>> = Vec::new();
 
     for config in configs {
         match config {
             #[cfg(feature = "webhook")]
             AdapterConfig::Webhook(webhook_config) => {
+                webhook_config
+                    .validate()
+                    .map_err(|e| Box::new(Error::ConfigError(e)))?;
                 adapters.push(Arc::new(webhook::WebhookAdapter::new(
                     webhook_config.clone(),
                 )));
@@ -40,11 +48,11 @@ pub fn create_adapters(configs: &[AdapterConfig]) -> Result<Vec<Arc<dyn ChannelA
                 adapters.push(Arc::new(mqtt));
             }
             #[cfg(not(feature = "webhook"))]
-            AdapterConfig::Webhook(_) => return Err(Error::FeatureDisabled("webhook")),
+            AdapterConfig::Webhook(_) => return Err(Box::new(Error::FeatureDisabled("webhook"))),
             #[cfg(not(feature = "kafka"))]
-            AdapterConfig::Kafka(_) => return Err(Error::FeatureDisabled("kafka")),
+            AdapterConfig::Kafka(_) => return Err(Box::new(Error::FeatureDisabled("kafka"))),
             #[cfg(not(feature = "mqtt"))]
-            AdapterConfig::Mqtt(_) => return Err(Error::FeatureDisabled("mqtt")),
+            AdapterConfig::Mqtt(_) => return Err(Box::new(Error::FeatureDisabled("mqtt"))),
         }
     }
 

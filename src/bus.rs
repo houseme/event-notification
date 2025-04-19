@@ -1,12 +1,16 @@
-use crate::adapter::ChannelAdapter;
-use crate::error::Error;
-use crate::event::{Event, Log};
-use crate::store::EventStore;
+use crate::ChannelAdapter;
+use crate::Error;
+use crate::EventStore;
+use crate::{Event, Log};
 use chrono::Utc;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 
+/// Handles incoming events from the producer.
+///
+/// This function is responsible for receiving events from the producer and sending them to the appropriate adapters.
+/// It also handles the shutdown process and saves any pending logs to the event store.
 pub async fn event_bus(
     mut rx: mpsc::Receiver<Event>,
     adapters: Vec<Arc<dyn ChannelAdapter>>,

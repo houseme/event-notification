@@ -1,11 +1,12 @@
-use crate::error::Error;
-use crate::event::Log;
+use crate::Error;
+use crate::Log;
 use chrono::Utc;
-use parking_lot::RwLock;
 use std::sync::Arc;
-use tokio::fs::{create_dir_all, File, OpenOptions};
+use tokio::fs::{File, OpenOptions, create_dir_all};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader, BufWriter};
+use tokio::sync::RwLock;
 
+/// `EventStore` is a struct that manages the storage of event logs.
 pub struct EventStore {
     path: String,
     lock: Arc<RwLock<()>>,
@@ -21,7 +22,7 @@ impl EventStore {
     }
 
     pub async fn save_logs(&self, logs: &[Log]) -> Result<(), Error> {
-        let _guard = self.lock.write();
+        let _guard = self.lock.write().await;
         let file_path = format!("{}/events_{}.jsonl", self.path, Utc::now().timestamp());
         let file = OpenOptions::new()
             .create(true)
@@ -39,7 +40,7 @@ impl EventStore {
     }
 
     pub async fn load_logs(&self) -> Result<Vec<Log>, Error> {
-        let _guard = self.lock.read();
+        let _guard = self.lock.read().await;
         let mut logs = Vec::new();
         let mut entries = tokio::fs::read_dir(&self.path).await?;
         while let Some(entry) = entries.next_entry().await? {

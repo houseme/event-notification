@@ -1,6 +1,20 @@
 # CHANGELOG
 
-## [Unreleased] 0.3.0
+## [Unreleased] 0.4.0
+
+## 0.3.0 (2025-04-20)
+
+### Added
+
+- `HttpProducerConfig` struct for HTTP producer configuration
+- `set_http_port` method for runtime port configuration
+- Support for HTTP port configuration via config file
+
+### Changed
+
+- Unified event sending through `EventProducer::send_event`
+- Refactored HTTP event handling to use `send_event` method
+- Updated examples and tests to demonstrate port configuration
 
 ## 0.2.0 (2025-04-19)
 

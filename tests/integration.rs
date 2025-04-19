@@ -78,6 +78,7 @@ async fn test_notification_system() {
             max_retries: 1,
             timeout: 5,
         })],
+        http: Default::default(),
     };
     let system = Arc::new(tokio::sync::Mutex::new(
         NotificationSystem::new(config.clone()).await.unwrap(),

@@ -1,6 +1,6 @@
 [package]
 name = "event-notification"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 authors = ["houseme"]
 description = "A modular event notification system with multi-channel support"
@@ -14,7 +14,6 @@ rust-version = "1.85"
 
 
 [dependencies]
-axum = "0.8.3"
 async-trait = "0.1.88"
 chrono = { version = "0.4.40", features = ["serde"] }
 dotenv = "0.15.0"
@@ -27,7 +26,7 @@ smallvec = { version = "1.15.0", features = ["serde"] }
 strum = { version = "0.27", features = ["derive"] }
 tracing = "0.1.41"
 thiserror = "2.0.12"
-tokio = { version = "1.44.2", features = ["full"] }
+tokio = { version = "1.44.2", features = ["sync", "net", "macros", "signal", "rt-multi-thread"] }
 tokio-util = "0.7.14"
 uuid = { version = "1.16.0", features = ["v4", "serde"] }
 
@@ -40,11 +39,16 @@ optional = true
 version = "0.24"
 optional = true
 
+[dependencies.axum]
+version = "0.8.3"
+optional = true
+
 [features]
 default = ["webhook"]
 webhook = ["dep:reqwest"]
 kafka = ["rdkafka"]
 mqtt = ["rumqttc"]
+http-producer = ["dep:axum"]
 
 [dev-dependencies]
 tokio = { version = "1.44.2", features = ["test-util"] }

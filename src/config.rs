@@ -62,6 +62,25 @@ pub enum AdapterConfig {
     Mqtt(MqttConfig),
 }
 
+/// http producer configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HttpProducerConfig {
+    #[serde(default = "default_http_port")]
+    pub port: u16,
+}
+
+impl Default for HttpProducerConfig {
+    fn default() -> Self {
+        Self {
+            port: default_http_port(),
+        }
+    }
+}
+
+fn default_http_port() -> u16 {
+    3000
+}
+
 /// Configuration for the notification system.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NotificationConfig {
@@ -70,6 +89,8 @@ pub struct NotificationConfig {
     #[serde(default = "default_channel_capacity")]
     pub channel_capacity: usize,
     pub adapters: Vec<AdapterConfig>,
+    #[serde(default)]
+    pub http: HttpProducerConfig,
 }
 
 impl Default for NotificationConfig {
@@ -78,6 +99,7 @@ impl Default for NotificationConfig {
             store_path: default_store_path(),
             channel_capacity: default_channel_capacity(),
             adapters: Vec::new(),
+            http: HttpProducerConfig::default(),
         }
     }
 }

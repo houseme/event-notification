@@ -1,5 +1,5 @@
-use event_notification::create_adapters;
 use event_notification::NotificationSystem;
+use event_notification::create_adapters;
 use event_notification::{AdapterConfig, NotificationConfig, WebhookConfig};
 use event_notification::{Bucket, Event, Identity, Metadata, Name, Object, Source};
 use std::collections::HashMap;
@@ -11,7 +11,7 @@ use tokio::signal;
 async fn main() -> Result<(), Box<dyn error::Error>> {
     tracing_subscriber::fmt::init();
 
-    let config = NotificationConfig {
+    let mut config = NotificationConfig {
         store_path: "./events".to_string(),
         channel_capacity: 100,
         adapters: vec![AdapterConfig::Webhook(WebhookConfig {
@@ -24,16 +24,18 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
             max_retries: 3,
             timeout: 10,
         })],
+        http: Default::default(),
     };
+    config.http.port = 8080;
 
     // loading configuration from specific env files
-    let config = NotificationConfig::from_env_file(".env.example")?;
+    let _config = NotificationConfig::from_env_file(".env.example")?;
 
     // loading from a specific file
-    let config = NotificationConfig::from_file("event.toml")?;
+    let _config = NotificationConfig::from_file("event.toml")?;
 
     // Automatically load from multiple sources (Priority: Environment Variables > YAML > TOML)
-    let config = NotificationConfig::load()?;
+    let _config = NotificationConfig::load()?;
 
     let system = Arc::new(tokio::sync::Mutex::new(
         NotificationSystem::new(config.clone()).await?,

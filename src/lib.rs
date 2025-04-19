@@ -7,6 +7,7 @@ mod global;
 mod producer;
 mod store;
 
+pub use adapter::ChannelAdapter;
 pub use adapter::create_adapters;
 #[cfg(feature = "kafka")]
 pub use adapter::kafka::KafkaAdapter;
@@ -14,7 +15,6 @@ pub use adapter::kafka::KafkaAdapter;
 pub use adapter::mqtt::MqttAdapter;
 #[cfg(feature = "webhook")]
 pub use adapter::webhook::WebhookAdapter;
-pub use adapter::ChannelAdapter;
 pub use bus::event_bus;
 #[cfg(feature = "kafka")]
 pub use config::KafkaConfig;
@@ -27,8 +27,14 @@ pub use error::Error;
 
 pub use event::{Bucket, Event, EventBuilder, Identity, Log, Metadata, Name, Object, Source};
 pub use global::{initialize, initialize_and_start, send_event, shutdown, start};
-pub use producer::{handle_event, start_producer};
 pub use store::EventStore;
+
+#[cfg(feature = "http-producer")]
+pub use producer::EventProducer;
+#[cfg(feature = "http-producer")]
+pub use producer::http::HttpProducer;
+#[cfg(feature = "http-producer")]
+pub use producer::http::HttpProducerConfig;
 
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -43,6 +49,8 @@ pub struct NotificationSystem {
     rx: Option<mpsc::Receiver<Event>>,
     store: Arc<EventStore>,
     shutdown: CancellationToken,
+    #[cfg(feature = "http-producer")]
+    http_config: HttpProducerConfig,
 }
 
 impl NotificationSystem {
@@ -67,6 +75,8 @@ impl NotificationSystem {
             rx: Some(rx),
             store,
             shutdown,
+            #[cfg(feature = "http-producer")]
+            http_config: config.http,
         })
     }
 
@@ -78,23 +88,19 @@ impl NotificationSystem {
         let shutdown_clone = self.shutdown.clone();
         let store_clone = self.store.clone();
         let bus_handle = tokio::spawn(async move {
-            if let Err(e) = bus::event_bus(rx, adapters, store_clone, shutdown_clone).await {
+            if let Err(e) = event_bus(rx, adapters, store_clone, shutdown_clone).await {
                 tracing::error!("Event bus failed: {}", e);
             }
         });
 
-        let tx_clone = self.tx.clone();
-        let producer_handle = tokio::spawn(async move {
-            if let Err(e) = producer::start_producer(tx_clone).await {
-                tracing::error!("Producer failed: {}", e);
-            }
-        });
+        #[cfg(feature = "http-producer")]
+        {
+            let producer = HttpProducer::new(tx, self.http_config.port);
+            producer.start().await?;
+        }
+
         tokio::select! {
             result = bus_handle => {
-                result.map_err(Error::JoinError)?;
-                Ok(())
-            },
-            result = producer_handle => {
                 result.map_err(Error::JoinError)?;
                 Ok(())
             },
@@ -119,5 +125,12 @@ impl NotificationSystem {
     /// This method is used to cancel the event bus and producer tasks.
     pub fn shutdown(&self) {
         self.shutdown.cancel();
+    }
+
+    /// Sets the HTTP port for the notification system.
+    /// This method is used to change the port for the HTTP producer.
+    #[cfg(feature = "http-producer")]
+    pub fn set_http_port(&mut self, port: u16) {
+        self.http_config.port = port;
     }
 }

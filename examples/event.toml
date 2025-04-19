@@ -22,3 +22,6 @@ port = 1883
 client_id = "event-notifier"
 topic = "events"
 max_retries = 3
+
+[http]
+port = 8080

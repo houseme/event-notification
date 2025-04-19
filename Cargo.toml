@@ -1,10 +1,10 @@
 [package]
 name = "event-notification"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["houseme"]
 description = "A modular event notification system with multi-channel support"
-license = "Apache-2.0 or MIT"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/houseme/event-notification"
 documentation = "https://docs.rs/event-notification"
 readme = "README.md"
@@ -27,9 +27,9 @@ smallvec = { version = "1.15.0", features = ["serde"] }
 strum = { version = "0.27", features = ["derive"] }
 tracing = "0.1.41"
 thiserror = "2.0.12"
-tokio = { version = "1.44", features = ["full"] }
+tokio = { version = "1.44.2", features = ["full"] }
 tokio-util = "0.7.14"
-uuid = { version = "1.16", features = ["v4", "serde"] }
+uuid = { version = "1.16.0", features = ["v4", "serde"] }
 
 [dependencies.rdkafka]
 version = "0.37.0"

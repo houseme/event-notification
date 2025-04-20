@@ -56,7 +56,8 @@ pub async fn start(adapters: Vec<Arc<dyn ChannelAdapter>>) -> Result<(), Error> 
 /// };
 ///
 /// // complete initialization and startup in one step
-/// initialize_and_start(config).await?
+/// initialize_and_start(config).await?;
+/// Ok(())
 /// }
 /// ```
 pub async fn initialize_and_start(config: NotificationConfig) -> Result<(), Error> {

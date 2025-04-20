@@ -1,8 +1,11 @@
+use crate::ChannelAdapter;
 use crate::Error;
-use crate::config::KafkaConfig;
-use crate::event::Event;
+use crate::Event;
+use crate::KafkaConfig;
 use async_trait::async_trait;
+use rdkafka::error::KafkaError;
 use rdkafka::producer::{FutureProducer, FutureRecord};
+use rdkafka::types::RDKafkaErrorCode;
 use rdkafka::util::Timeout;
 use std::time::Duration;
 use tokio::time::sleep;
@@ -17,18 +20,47 @@ pub struct KafkaAdapter {
 impl KafkaAdapter {
     /// Creates a new Kafka adapter.
     pub fn new(config: &KafkaConfig) -> Result<Self, Error> {
-        let producer = rdkafka::producer::FutureProducer::from_config(
-            &rdkafka::config::ClientConfig::new()
-                .set("bootstrap.servers", &config.brokers)
-                .create()
-                .map_err(Error::Kafka)?,
-        )
-        .map_err(Error::Kafka)?;
+        // Create a Kafka producer with the provided configuration.
+        let producer = rdkafka::config::ClientConfig::new()
+            .set("bootstrap.servers", &config.brokers)
+            .set("message.timeout.ms", config.timeout.to_string())
+            .create()?;
+
         Ok(Self {
             producer,
             topic: config.topic.clone(),
             max_retries: config.max_retries,
         })
+    }
+    /// Sends an event to the Kafka topic with retry logic.
+    async fn send_with_retry(&self, event: &Event) -> Result<(), Error> {
+        let event_id = event.id.to_string();
+        let payload = serde_json::to_string(&event)?;
+
+        for attempt in 0..self.max_retries {
+            let record = FutureRecord::to(&self.topic)
+                .key(&event_id)
+                .payload(&payload);
+
+            match self.producer.send(record, Timeout::Never).await {
+                Ok(_) => return Ok(()),
+                Err((KafkaError::MessageProduction(RDKafkaErrorCode::QueueFull), _)) => {
+                    tracing::warn!(
+                        "Kafka attempt {} failed: Queue full. Retrying...",
+                        attempt + 1
+                    );
+                    sleep(Duration::from_secs(2u64.pow(attempt))).await;
+                }
+                Err((e, _)) => {
+                    tracing::error!("Kafka send error: {}", e);
+                    return Err(Error::Kafka(e));
+                }
+            }
+        }
+
+        Err(Error::Custom(
+            "Exceeded maximum retry attempts for Kafka message".to_string(),
+        ))
     }
 }
 
@@ -39,21 +71,6 @@ impl ChannelAdapter for KafkaAdapter {
     }
 
     async fn send(&self, event: &Event) -> Result<(), Error> {
-        let payload = serde_json::to_string(event).map_err(Error::Serde)?;
-        let record = FutureRecord::to(&self.topic)
-            .payload(&payload)
-            .key(&event.id.to_string());
-        let mut attempt = 0;
-        loop {
-            match self.producer.send(record, Timeout::Never).await {
-                Ok(()) => return Ok(()),
-                Err((e, _)) if attempt < self.max_retries => {
-                    attempt += 1;
-                    tracing::warn!("Kafka attempt {} failed: {}. Retrying...", attempt, e);
-                    sleep(Duration::from_secs(2u64.pow(attempt))).await;
-                }
-                Err((e, _)) => return Err(Error::Kafka(e)),
-            }
-        }
+        self.send_with_retry(event).await
     }
 }

@@ -14,6 +14,7 @@ type = "Kafka"
 brokers = "localhost:9092"
 topic = "notifications"
 max_retries = 3
+timeout = 5000
 
 [[adapters]]
 type = "Mqtt"

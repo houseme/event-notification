@@ -43,7 +43,7 @@ pub fn create_adapters(
             }
             #[cfg(feature = "mqtt")]
             AdapterConfig::Mqtt(mqtt_config) => {
-                let (mqtt, event_loop) = mqtt::MqttAdapter::new(mqtt_config);
+                let (mqtt, mut event_loop) = mqtt::MqttAdapter::new(mqtt_config);
                 tokio::spawn(async move { while event_loop.poll().await.is_ok() {} });
                 adapters.push(Arc::new(mqtt));
             }

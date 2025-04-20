@@ -16,6 +16,8 @@ pub use adapter::mqtt::MqttAdapter;
 #[cfg(feature = "webhook")]
 pub use adapter::webhook::WebhookAdapter;
 pub use bus::event_bus;
+#[cfg(feature = "http-producer")]
+pub use config::HttpProducerConfig;
 #[cfg(feature = "kafka")]
 pub use config::KafkaConfig;
 #[cfg(feature = "mqtt")]
@@ -33,8 +35,6 @@ pub use store::EventStore;
 pub use producer::EventProducer;
 #[cfg(feature = "http-producer")]
 pub use producer::http::HttpProducer;
-#[cfg(feature = "http-producer")]
-pub use producer::http::HttpProducerConfig;
 
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -95,7 +95,7 @@ impl NotificationSystem {
 
         #[cfg(feature = "http-producer")]
         {
-            let producer = HttpProducer::new(tx, self.http_config.port);
+            let producer = HttpProducer::new(self.tx.clone(), self.http_config.port);
             producer.start().await?;
         }
 

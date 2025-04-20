@@ -18,7 +18,10 @@ pub trait EventProducer: Send + Sync {
 pub mod http {
     use super::*;
     use axum::{Json, Router, routing::post};
+    use std::sync::Arc;
+    use tokio::sync::mpsc;
 
+    #[derive(Clone)]
     pub struct HttpProducer {
         tx: mpsc::Sender<Event>,
         port: u16,
@@ -38,10 +41,13 @@ pub mod http {
     #[async_trait]
     impl EventProducer for HttpProducer {
         async fn start(&self) -> Result<(), Error> {
-            let producer = Arc::new(self.clone());
+            let producer = self.clone();
             let app = Router::new().route(
                 "/event",
-                post(|event| handle_event(event, producer.clone())),
+                post(move |event| {
+                    let prod = producer.clone();
+                    async move { handle_event(event, prod).await }
+                }),
             );
 
             let addr = format!("0.0.0.0:{}", self.port);
@@ -73,7 +79,7 @@ pub mod http {
 
     async fn handle_event(
         Json(event): Json<Event>,
-        producer: Arc<HttpProducer>,
+        producer: HttpProducer,
     ) -> Result<(), axum::http::StatusCode> {
         producer
             .send_event(event)

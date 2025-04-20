@@ -41,6 +41,7 @@ pub struct KafkaConfig {
     pub brokers: String,
     pub topic: String,
     pub max_retries: u32,
+    pub timeout: u64,
 }
 
 /// Configuration for the MQTT adapter.

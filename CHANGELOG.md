@@ -1,6 +1,17 @@
 # CHANGELOG
 
-## [Unreleased] 0.4.0
+## [Unreleased] 0.5.0
+
+## 0.4.0 (2025-04-20)
+
+### Fixed
+
+- Fixed HttpProducer to properly handle asynchronous event handling with clones
+- Fixed Kafka adapter by adding proper import for FromClientConfig and solving
+  temporary value drop issues
+- Added KafkaRetryExceeded error variant for better retry failure handling
+- Fixed retry mechanisms to avoid using moved futures in loops
+- Fixed error display implementations for new error types
 
 ## 0.3.0 (2025-04-20)
 

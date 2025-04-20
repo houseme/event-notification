@@ -1,3 +1,4 @@
+use crate::ChannelAdapter;
 use crate::Error;
 use crate::Event;
 use crate::MqttConfig;

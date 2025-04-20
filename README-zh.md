@@ -28,14 +28,14 @@
 
 ```toml
 [dependencies]
-event-notification = "0.1.0"
+event-notification = "0.4.0"
 ```
 
 启用特定适配器功能：
 
 ```toml
 [dependencies]
-event-notification = { version = "0.1.0", features = ["webhook", "kafka", "mqtt"] }
+event-notification = { version = "0.4.0", features = ["webhook", "kafka", "mqtt"] }
 ```
 
 ## 快速开始

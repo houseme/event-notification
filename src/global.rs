@@ -52,6 +52,7 @@ pub async fn start(adapters: Vec<Arc<dyn ChannelAdapter>>) -> Result<(), Error> 
 ///     store_path: "./events".to_string(),
 ///     channel_capacity: 100,
 ///     adapters: vec![/* 适配器配置 */],
+///     http: Default::default(),
 /// };
 ///
 /// // complete initialization and startup in one step

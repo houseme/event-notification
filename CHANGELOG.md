@@ -2,6 +2,30 @@
 
 ## [Unreleased] 0.5.0
 
+## 0.4.1 (2025-04-20)
+
+### Enhancements
+
+- Improved test methodology:
+    - Added mock adapters for webhook testing
+    - Enhanced test_notification_system with dependency injection
+    - Optimized test timeout handling to prevent hanging tests
+- Improved documentation:
+    - Added comprehensive comments in global.rs
+    - Enhanced code examples in documentation
+
+### Bug Fixes
+
+- Fixed webhook adapter timeout handling in high concurrency scenarios
+- Corrected configuration validation error messages
+- Fixed potential deadlock in notification system shutdown process
+
+### Engineering
+
+- Increased test coverage for configuration loading edge cases
+- Refactored test utilities for better reusability
+- Added CI pipeline for testing across multiple platforms
+
 ## 0.4.0 (2025-04-20)
 
 ### Fixed

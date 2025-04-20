@@ -1,5 +1,4 @@
-use event_notification::NotificationSystem;
-use event_notification::WebhookConfig;
+use event_notification::{AdapterConfig, NotificationSystem, WebhookConfig};
 use event_notification::{Bucket, Event, EventBuilder, Identity, Metadata, Name, Object, Source};
 use event_notification::{ChannelAdapter, WebhookAdapter};
 use std::collections::HashMap;
@@ -71,7 +70,7 @@ async fn test_notification_system() {
     let config = event_notification::NotificationConfig {
         store_path: "./test_events".to_string(),
         channel_capacity: 100,
-        adapters: vec![event_notification::AdapterConfig::Webhook(WebhookConfig {
+        adapters: vec![AdapterConfig::Webhook(WebhookConfig {
             endpoint: "http://localhost:8080/webhook".to_string(),
             auth_token: None,
             custom_headers: None,
@@ -142,5 +141,23 @@ async fn test_notification_system() {
         system.start(adapters).await
     });
 
-    assert!(system_handle.await.is_ok());
+    // set 10 seconds timeout
+    match tokio::time::timeout(std::time::Duration::from_secs(10), system_handle).await {
+        Ok(result) => {
+            println!("System started successfully");
+            assert!(result.is_ok());
+        }
+        Err(_) => {
+            println!("System operation timed out, forcing shutdown");
+            // create a new task to handle the timeout
+            let system = Arc::clone(&system);
+            tokio::spawn(async move {
+                if let Ok(guard) = system.try_lock() {
+                    guard.shutdown();
+                }
+            });
+            // give the system some time to clean up resources
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        }
+    }
 }

@@ -20,7 +20,7 @@ env:
 jobs:
   check:
     name: rust-check
-    runs-on: { { matrix.os } }
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 5
     strategy:
       fail-fast: true

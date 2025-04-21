@@ -16,7 +16,7 @@ rust-version = "1.85"
 [dependencies]
 async-trait = "0.1.88"
 chrono = { version = "0.4.40", features = ["serde"] }
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 figment = { version = "0.10.19", features = ["toml", "yaml", "env"] }
 reqwest = { version = "0.12.15", default-features = false, features = ["rustls-tls", "charset", "http2", "macos-system-configuration", "stream", "json", "blocking"], optional = true }
 serde = { version = "1.0.219", features = ["derive"] }

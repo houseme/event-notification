@@ -136,7 +136,7 @@ impl NotificationConfig {
     /// loading configuration from env file
     pub fn from_env_file(path: &str) -> Result<Self, Error> {
         // loading env files
-        dotenv::from_path(path)
+        dotenvy::from_path(path)
             .map_err(|e| Error::ConfigError(format!("unable to load env file: {}", e)))?;
 
         // Extract configuration from environment variables using figurement

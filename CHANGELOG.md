@@ -1,6 +1,18 @@
 # CHANGELOG
 
-## [Unreleased] 0.5.0
+## [Unreleased] 0.4.2
+
+### Dependencies
+
+- Migrated from `dotenv` to `dotenvy` 0.15.7 for improved .env file handling
+    - Better error messages for malformed .env files
+    - Improved performance and memory usage
+    - Maintained backward compatibility with existing .env files
+
+### Engineering
+
+- Updated documentation to reflect the dependency change
+- Ensured all environment variable loading paths now use dotenvy
 
 ## 0.4.1 (2025-04-20)
 

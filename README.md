@@ -1,6 +1,5 @@
-# Event Notification
-
 <div align="center">
+<h1> Event Notification</h1>
 
 [English](./README.md) | [简体中文](./README-zh.md)
 
@@ -9,7 +8,13 @@ A modular event notification system with multi-channel support for Rust applicat
 [![Crates.io](https://img.shields.io/crates/v/event-notification.svg)](https://crates.io/crates/event-notification)
 [![Docs.rs](https://docs.rs/event-notification/badge.svg)](https://docs.rs/event-notification)
 [![License](https://img.shields.io/badge/license-Apache%202.0%20or%20MIT-blue.svg)](LICENSE-APACHE)
-[![Rust](https://github.com/houseme/event-notification/workflows/Rust/badge.svg)](https://github.com/houseme/event-notification/actions)
+[![Build-Test-Lint](https://github.com/houseme/event-notification/actions/workflows/rust.yml/badge.svg)](https://github.com/houseme/event-notification/actions/workflows/rust.yml)
+[![Audit](https://github.com/houseme/event-notification/actions/workflows/audit.yml/badge.svg)](https://github.com/houseme/event-notification/actions/workflows/audit.yml)
+[![CodeQL](https://github.com/houseme/event-notification/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/houseme/event-notification/actions/workflows/github-code-scanning/codeql)
+[![Dependabot Updates](https://github.com/houseme/event-notification/actions/workflows/dependabot/dependabot-updates/badge.svg)](https://github.com/houseme/event-notification/actions/workflows/dependabot/dependabot-updates)
+[![rust-clippy analyze](https://github.com/houseme/event-notification/actions/workflows/rust-clippy.yml/badge.svg)](https://github.com/houseme/event-notification/actions/workflows/rust-clippy.yml)
+[![GitHub Tag](https://img.shields.io/github/v/tag/houseme/event-notification)](https://github.com/houseme/event-notification/tags)
+[![Crates.io MSRV](https://img.shields.io/crates/msrv/event-notification)](https://github.com/houseme/event-notification)
 
 </div>
 

@@ -53,7 +53,7 @@ impl KafkaAdapter {
                 }
                 Err((e, _)) => {
                     tracing::error!("Kafka send error: {}", e);
-                    return Err(Error::Kafka(e));
+                    return Err(Error::Kafka(Box::new(e)));
                 }
             }
         }

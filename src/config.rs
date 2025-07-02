@@ -137,7 +137,7 @@ impl NotificationConfig {
     pub fn from_env_file(path: &str) -> Result<Self, Error> {
         // loading env files
         dotenvy::from_path(path)
-            .map_err(|e| Error::ConfigError(format!("unable to load env file: {}", e)))?;
+            .map_err(|e| Error::ConfigError(format!("unable to load env file: {e}")))?;
 
         // Extract configuration from environment variables using figurement
         let figment =

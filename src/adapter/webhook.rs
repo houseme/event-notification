@@ -26,7 +26,7 @@ impl WebhookAdapter {
     fn build_request(&self, event: &Event) -> RequestBuilder {
         let mut request = self.client.post(&self.config.endpoint).json(event);
         if let Some(token) = &self.config.auth_token {
-            request = request.header("Authorization", format!("Bearer {}", token));
+            request = request.header("Authorization", format!("Bearer {token}"));
         }
         if let Some(headers) = &self.config.custom_headers {
             for (key, value) in headers {
@@ -48,7 +48,13 @@ impl ChannelAdapter for WebhookAdapter {
         loop {
             match self.build_request(event).send().await {
                 Ok(response) => {
-                    response.error_for_status().map_err(Error::Http)?;
+                    match response.error_for_status() {
+                        Ok(_) => tracing::info!("Webhook sent successfully"),
+                        Err(e) => {
+                            tracing::error!("Webhook failed with status: {}", e);
+                            return Err(Error::Http(Box::new(e)));
+                        }
+                    }
                     return Ok(());
                 }
                 Err(e) if attempt < self.config.max_retries => {
@@ -56,7 +62,7 @@ impl ChannelAdapter for WebhookAdapter {
                     tracing::warn!("Webhook attempt {} failed: {}. Retrying...", attempt, e);
                     sleep(Duration::from_secs(2u64.pow(attempt))).await;
                 }
-                Err(e) => return Err(Error::Http(e)),
+                Err(e) => return Err(Error::Http(Box::new(e))),
             }
         }
     }

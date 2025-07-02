@@ -37,7 +37,10 @@ impl ChannelAdapter for MqttAdapter {
     }
 
     async fn send(&self, event: &Event) -> Result<(), Error> {
-        let payload = serde_json::to_string(event).map_err(Error::Serde)?;
+        let payload = match serde_json::to_string(event) {
+            Ok(p) => p,
+            Err(e) => return Err(Error::Serde(Box::new(e))),
+        };
         let mut attempt = 0;
         loop {
             match self
@@ -51,7 +54,7 @@ impl ChannelAdapter for MqttAdapter {
                     tracing::warn!("MQTT attempt {} failed: {}. Retrying...", attempt, e);
                     sleep(Duration::from_secs(2u64.pow(attempt))).await;
                 }
-                Err(e) => return Err(Error::Mqtt(e)),
+                Err(e) => return Err(Error::Mqtt(Box::new(e))),
             }
         }
     }

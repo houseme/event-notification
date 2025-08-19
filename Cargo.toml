@@ -14,7 +14,7 @@ rust-version = "1.85"
 
 
 [dependencies]
-async-trait = "0.1.88"
+async-trait = "0.1.89"
 chrono = { version = "0.4.41", features = ["serde"] }
 dotenvy = "0.15.7"
 figment = { version = "0.10.19", features = ["toml", "yaml", "env"] }

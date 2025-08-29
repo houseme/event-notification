@@ -52,4 +52,4 @@ http-producer = ["dep:axum"]
 
 [dev-dependencies]
 tokio = { version = "1.47.1", features = ["test-util"] }
-tracing-subscriber = "0.3.19"
+tracing-subscriber = "0.3.20"

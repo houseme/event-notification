@@ -36,7 +36,7 @@ features = ["tokio"]
 optional = true
 
 [dependencies.rumqttc]
-version = "0.24"
+version = "0.25"
 optional = true
 
 [dependencies.axum]

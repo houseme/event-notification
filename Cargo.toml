@@ -40,7 +40,7 @@ version = "0.25"
 optional = true
 
 [dependencies.axum]
-version = "0.8.4"
+version = "0.8.5"
 optional = true
 
 [features]

@@ -26,7 +26,7 @@ smallvec = { version = "1.15.1", features = ["serde"] }
 strum = { version = "0.27", features = ["derive"] }
 tracing = "0.1.44"
 thiserror = "2.0.17"
-tokio = { version = "1.48.0", features = ["sync", "net", "macros", "signal", "rt-multi-thread"] }
+tokio = { version = "1.49.0", features = ["sync", "net", "macros", "signal", "rt-multi-thread"] }
 tokio-util = "0.7.18"
 uuid = { version = "1.19.0", features = ["v4", "serde"] }
 
@@ -51,5 +51,5 @@ mqtt = ["rumqttc"]
 http-producer = ["dep:axum"]
 
 [dev-dependencies]
-tokio = { version = "1.48.0", features = ["test-util"] }
+tokio = { version = "1.49.0", features = ["test-util"] }
 tracing-subscriber = "0.3.22"

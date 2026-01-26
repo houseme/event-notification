@@ -31,7 +31,7 @@ tokio-util = "0.7.18"
 uuid = { version = "1.19.0", features = ["v4", "serde"] }
 
 [dependencies.rdkafka]
-version = "0.38.0"
+version = "0.39.0"
 features = ["tokio"]
 optional = true
 

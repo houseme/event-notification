@@ -18,7 +18,7 @@ async-trait = "0.1.89"
 chrono = { version = "0.4.44", features = ["serde"] }
 dotenvy = "0.15.7"
 figment = { version = "0.10.19", features = ["toml", "yaml", "env"] }
-reqwest = { version = "0.13.2", default-features = false, features = ["rustls", "charset", "http2", "system-proxy", "stream", "json", "blocking", "query", "form"], optional = true }
+reqwest = { version = "0.13.3", default-features = false, features = ["rustls", "charset", "http2", "system-proxy", "stream", "json", "blocking", "query", "form"], optional = true }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 serde_with = "3.17"

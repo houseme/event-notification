@@ -10,7 +10,7 @@ documentation = "https://docs.rs/event-notification"
 readme = "README.md"
 keywords = ["notification", "event", "messaging", "kafka", "webhook"]
 categories = ["asynchronous", "network-programming", "api-bindings"]
-rust-version = "1.85"
+rust-version = "1.93.0"
 
 
 [dependencies]
@@ -18,17 +18,17 @@ async-trait = "0.1.89"
 chrono = { version = "0.4.44", features = ["serde"] }
 dotenvy = "0.15.7"
 figment = { version = "0.10.19", features = ["toml", "yaml", "env"] }
-reqwest = { version = "0.13.2", default-features = false, features = ["rustls", "charset", "http2", "system-proxy", "stream", "json", "blocking", "query", "form"], optional = true }
+reqwest = { version = "0.13.3", default-features = false, features = ["rustls", "charset", "http2", "system-proxy", "stream", "json", "blocking", "query", "form"], optional = true }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
-serde_with = "3.17"
+serde_with = "3.18"
 smallvec = { version = "1.15.1", features = ["serde"] }
 strum = { version = "0.28", features = ["derive"] }
 tracing = "0.1.44"
 thiserror = "2.0.18"
-tokio = { version = "1.51.0", features = ["sync", "net", "macros", "signal", "rt-multi-thread"] }
+tokio = { version = "1.52.1", features = ["sync", "net", "macros", "signal", "rt-multi-thread"] }
 tokio-util = "0.7.18"
-uuid = { version = "1.23.0", features = ["v4", "serde"] }
+uuid = { version = "1.23.1", features = ["v4", "serde"] }
 
 [dependencies.rdkafka]
 version = "0.39.0"
@@ -40,7 +40,7 @@ version = "0.25"
 optional = true
 
 [dependencies.axum]
-version = "0.8.8"
+version = "0.8.9"
 optional = true
 
 [features]
@@ -51,5 +51,5 @@ mqtt = ["rumqttc"]
 http-producer = ["dep:axum"]
 
 [dev-dependencies]
-tokio = { version = "1.51.0", features = ["test-util"] }
+tokio = { version = "1.52.1", features = ["test-util"] }
 tracing-subscriber = "0.3.23"
